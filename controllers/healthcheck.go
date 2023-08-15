@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"runtime"
 	"time"
 
 	"github.com/pkg/errors"
@@ -126,6 +127,7 @@ func (r *EtcdadmClusterReconciler) getEtcdHttpClient(ctx context.Context, cluste
 		},
 	}
 	r.etcdHealthCheckConfig.clusterToHttpClient.Store(cluster.UID, etcdHttpClient)
+	r.mapSize()
 	return etcdHttpClient, nil
 }
 
@@ -141,4 +143,23 @@ func isPortOpen(ctx context.Context, endpoint string) bool {
 	}
 
 	return false
+}
+
+func (r *EtcdadmClusterReconciler) mapSize() {
+	i := 0
+	r.etcdHealthCheckConfig.clusterToHttpClient.Range(func(key, value interface{}) bool {
+		i++
+		return true
+	})
+	r.Log.Info("clusterToHttpClient.size", "size", i)
+
+}
+
+func (r *EtcdadmClusterReconciler) printMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	r.Log.Info(fmt.Sprintf("Alloc = %v MiB", m.Alloc/1024/1024))
+	// r.Log.Info(fmt.Sprintf("TotalAlloc = %v MiB", m.TotalAlloc/1024/1024))
+	// r.Log.Info(fmt.Sprintf("Sys = %v MiB", m.Sys/1024/1024))
+	// r.Log.Info(fmt.Sprintf("NumGC = %v\n", m.NumGC))
 }

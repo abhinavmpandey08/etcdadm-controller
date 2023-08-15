@@ -54,8 +54,8 @@ func (r *EtcdadmClusterReconciler) removeEtcdMachine(ctx context.Context, ec *et
 	if etcdClient == nil {
 		return fmt.Errorf("could not create etcd client")
 	}
+	defer etcdClient.Close()
 	return r.removeEtcdMemberAndDeleteMachine(ctx, etcdClient, peerURL, machineToDelete)
-
 }
 
 func (r *EtcdadmClusterReconciler) generateEtcdClient(ctx context.Context, cluster *clusterv1.Cluster, endpoints string) (*clientv3.Client, error) {

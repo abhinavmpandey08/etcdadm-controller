@@ -116,6 +116,7 @@ func (r *EtcdadmClusterReconciler) startHealthCheckLoop(ctx context.Context, don
 }
 
 func (r *EtcdadmClusterReconciler) periodicEtcdMembersHealthCheck(ctx context.Context, cluster *clusterv1.Cluster, etcdCluster *etcdv1.EtcdadmCluster, etcdadmClusterMapper map[types.UID]etcdadmClusterMemberHealthConfig) error {
+	r.printMemUsage()
 	log := r.Log.WithValues("EtcdadmCluster", klog.KObj(etcdCluster))
 	if len(etcdCluster.Status.Endpoints) == 0 {
 		log.Info("Skipping healthcheck because Endpoints are empty", "Endpoints", etcdCluster.Status.Endpoints)
