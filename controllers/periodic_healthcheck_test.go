@@ -5,8 +5,14 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
+	"time"
 
 	etcdv1 "github.com/aws/etcdadm-controller/api/v1beta1"
+	"github.com/go-logr/zapr"
+	. "github.com/onsi/gomega"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/collections"
@@ -14,6 +20,35 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+func TestStartHealthCheckLoop(t *testing.T) {
+	g := NewWithT(t)
+	core, recordedLogs := observer.New(zapcore.InfoLevel)
+	logger := zapr.NewLogger(zap.New(core))
+
+	cluster := newClusterWithExternalEtcd()
+	etcdadmCluster := newEtcdadmCluster(cluster, withPausedAnnotation)
+	fakeClient := fake.NewClientBuilder().WithScheme(setupScheme()).WithObjects(etcdadmCluster).Build()
+
+	r := &EtcdadmClusterReconciler{
+		Client:              fakeClient,
+		Log:                 logger,
+		HealthCheckInterval: 1, // override the healthcheck interval to 1 second
+	}
+
+	done := make(chan struct{})
+
+	// Stop the healthcheck loop after 5 seconds
+	go func() {
+		time.Sleep(5 * time.Second)
+		close(done)
+	}()
+
+	r.startHealthCheckLoop(context.Background(), done)
+
+	g.Expect(recordedLogs.All()).To(Not(BeEmpty()))
+	g.Expect(recordedLogs.All()[recordedLogs.Len()-1].Message).To(Equal("HealthCheck paused for EtcdadmCluster, skipping"))
+}
 
 // This test verifies that the periodicEtcdMembersHealthCheck does not panic when a Machine corresponding to an ETCD endpoint doesn not exist.
 func TestReconcilePerodicHealthCheckEnsureNoPanic(t *testing.T) {

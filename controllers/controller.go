@@ -54,6 +54,7 @@ type EtcdadmClusterReconciler struct {
 	Scheme                  *runtime.Scheme
 	etcdHealthCheckConfig   etcdHealthCheckConfig
 	MaxConcurrentReconciles int
+	HealthCheckInterval     int
 }
 
 func (r *EtcdadmClusterReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, done <-chan struct{}) error {

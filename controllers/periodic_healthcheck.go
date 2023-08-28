@@ -19,7 +19,6 @@ import (
 
 const (
 	maxUnhealthyCount   = 5
-	healthCheckInterval = 30
 )
 
 type etcdHealthCheckConfig struct {
@@ -38,7 +37,7 @@ type etcdadmClusterMemberHealthConfig struct {
 func (r *EtcdadmClusterReconciler) startHealthCheckLoop(ctx context.Context, done <-chan struct{}) {
 	r.Log.Info("Starting periodic healthcheck loop")
 	etcdadmClusterMapper := make(map[types.UID]etcdadmClusterMemberHealthConfig)
-	ticker := time.NewTicker(healthCheckInterval * time.Second)
+	ticker := time.NewTicker(time.Duration(r.HealthCheckInterval) * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -56,6 +55,10 @@ func (r *EtcdadmClusterReconciler) startHealthCheckLoop(ctx context.Context, don
 				log := r.Log.WithValues("EtcdadmCluster", klog.KObj(&ec))
 				if annotations.HasPaused(&ec) {
 					log.Info("EtcdadmCluster reconciliation is paused, skipping health checks")
+					continue
+				}
+				if hasHealthCheckPauseAnnotation(&ec) {
+					log.Info("HealthCheck paused for EtcdadmCluster, skipping")
 					continue
 				}
 				if conditions.IsFalse(&ec, etcdv1.EtcdCertificatesAvailableCondition) {
@@ -200,4 +203,9 @@ func (r *EtcdadmClusterReconciler) getOwnedMachines(ctx context.Context, cluster
 	}
 
 	return etcdMachines.Filter(collections.OwnedMachines(&ec))
+}
+
+func hasHealthCheckPauseAnnotation(ec *etcdv1.EtcdadmCluster) bool {
+	_, has := ec.Annotations[etcdv1.PausedHealthCheckAnnotation]
+	return has
 }
