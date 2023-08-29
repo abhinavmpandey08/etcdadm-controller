@@ -461,8 +461,8 @@ func newClusterWithExternalEtcd() *clusterv1.Cluster {
 	}
 }
 
-func newEtcdadmCluster(cluster *clusterv1.Cluster) *etcdv1.EtcdadmCluster {
-	return &etcdv1.EtcdadmCluster{
+func newEtcdadmCluster(cluster *clusterv1.Cluster, opts ...etcdadmClusterTestOpt) *etcdv1.EtcdadmCluster {
+	etcdCluster := &etcdv1.EtcdadmCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testEtcdadmClusterName,
@@ -491,7 +491,23 @@ func newEtcdadmCluster(cluster *clusterv1.Cluster) *etcdv1.EtcdadmCluster {
 			},
 		},
 	}
+
+	for _, opt := range opts {
+		opt(etcdCluster)
+	}
+
+	return etcdCluster
 }
+
+type etcdadmClusterTestOpt func(e *etcdv1.EtcdadmCluster)
+
+func withPausedAnnotation(e *etcdv1.EtcdadmCluster) {
+	e.SetAnnotations(map[string]string{etcdv1.HealthCheckRetriesAnnotation: "0"})
+}
+
+// func withOwnerRef(e *etcdv1.EtcdadmCluster) {
+// 	e.SetAnnotations(map[string]string{etcdv1.HealthCheckRetriesAnnotation: "true"})
+// }
 
 func newEtcdMachine(etcdadmCluster *etcdv1.EtcdadmCluster, cluster *clusterv1.Cluster) *clusterv1.Machine {
 	return &clusterv1.Machine{
