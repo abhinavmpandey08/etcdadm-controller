@@ -216,8 +216,7 @@ func (r *EtcdadmClusterReconciler) periodicEtcdMembersHealthCheck(ctx context.Co
 
 	var retErr error
 	// check if quorum is perserved before deleting any machines
-	if len(etcdMachines)-len(currClusterHFConfig.unhealthyMembersToRemove) >= len(etcdMachines)/2+1 {
-		// only touch owned machines in health check alg
+	if len(etcdMachines)-currClusterHFConfig.totalUnhealthyMembersFrequency >= len(etcdMachines)/2+1 { // only touch owned machines in health check alg
 		for machineEndpoint, machineToDelete := range currClusterHFConfig.unhealthyMembersToRemove {
 			// only remove one machine at a time
 			if len(ownedMachines) <= desiredReplicas-1 {
