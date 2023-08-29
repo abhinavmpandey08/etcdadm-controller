@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	maxUnhealthyCount   = 5
+	maxUnhealthyCount = 5
 )
 
 type etcdHealthCheckConfig struct {

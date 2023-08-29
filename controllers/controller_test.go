@@ -505,6 +505,10 @@ func withPausedAnnotation(e *etcdv1.EtcdadmCluster) {
 	e.SetAnnotations(map[string]string{etcdv1.PausedHealthCheckAnnotation: "true"})
 }
 
+func withOwnerRef(e *etcdv1.EtcdadmCluster) {
+	e.SetAnnotations(map[string]string{etcdv1.PausedHealthCheckAnnotation: "true"})
+}
+
 func newEtcdMachine(etcdadmCluster *etcdv1.EtcdadmCluster, cluster *clusterv1.Cluster) *clusterv1.Machine {
 	return &clusterv1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
